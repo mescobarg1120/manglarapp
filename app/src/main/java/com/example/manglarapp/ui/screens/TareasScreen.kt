@@ -1,5 +1,6 @@
 package com.example.manglarapp.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.viewmodel.TareasViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TareasScreen(
@@ -21,19 +23,37 @@ fun TareasScreen(
     usuarioActual: Usuario,
     onNavigateToAgregar: () -> Unit,
     onConfirmarTarea: (String, DiaSemana) -> Unit,
-    onRevisarTarea: (String, DiaSemana) -> Unit
+    onRevisarTarea: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val tareas by viewModel.tareas.collectAsState()
     val modoEdicion by viewModel.modoEdicion.collectAsState()
     val semana by viewModel.semanaActual.collectAsState()
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
+    var showMenuExpanded by remember { mutableStateOf(false) }
+
+    // Interceptar botón físico "Atrás"
+    BackHandler {
+        showExitDialog = true
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tareas") },
+                title = {
+                    Column {
+                        Text("Tareas")
+                        Text(
+                            text = "Hola, ${usuarioActual.nombre}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
                     // Badge de tareas pendientes (solo admin)
@@ -45,10 +65,57 @@ fun TareasScreen(
                                     Badge { Text("${pendientes.size}") }
                                 }
                             ) {
-                                IconButton(onClick = { /* Navegar a pantalla de revisión */ }) {
+                                IconButton(onClick = onRevisarTarea) {
                                     Icon(Icons.Default.Notifications, "Pendientes")
                                 }
                             }
+                        }
+                    }
+
+                    // Menú de opciones
+                    Box {
+                        IconButton(onClick = { showMenuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, "Menú")
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenuExpanded,
+                            onDismissRequest = { showMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Perfil") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Person, contentDescription = null)
+                                },
+                                onClick = {
+                                    showMenuExpanded = false
+                                    // TODO: Navegar a perfil
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = { Text("Configuración") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Settings, contentDescription = null)
+                                },
+                                onClick = {
+                                    showMenuExpanded = false
+                                    // TODO: Navegar a configuración
+                                }
+                            )
+
+                            HorizontalDivider()
+
+                            DropdownMenuItem(
+                                text = { Text("Cerrar sesión") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Logout, contentDescription = null)
+                                },
+                                onClick = {
+                                    showMenuExpanded = false
+                                    showLogoutDialog = true
+                                }
+                            )
                         }
                     }
                 }
@@ -109,7 +176,7 @@ fun TareasScreen(
                             onConfirmarTarea(tarea.id, dia)
                         },
                         onRevisarTarea = { dia ->
-                            onRevisarTarea(tarea.id, dia)
+                            onRevisarTarea()
                         },
                         onLiberarTarea = { dia ->
                             viewModel.liberarTarea(tarea.id, dia)
@@ -118,6 +185,59 @@ fun TareasScreen(
                 }
             }
         }
+    }
+
+    // Diálogo de confirmación de logout
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = { Icon(Icons.Default.Logout, contentDescription = null) },
+            title = { Text("Cerrar sesión") },
+            text = { Text("¿Estás seguro de que deseas cerrar sesión?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Cerrar sesión")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmación de salida (botón físico atrás)
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            icon = { Icon(Icons.Default.ExitToApp, contentDescription = null) },
+            title = { Text("Salir") },
+            text = { Text("¿Deseas cerrar sesión?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExitDialog = false
+                        onLogout()
+                    }
+                ) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 
@@ -197,7 +317,6 @@ fun TareaCard(
                                     onLiberar = { onLiberarTarea(dia) }
                                 )
                             } else {
-                                // Botón para tomar tarea
                                 val tareasTomadasCount = tarea.asignaciones.values.filterNotNull().size
                                 if (tareasTomadasCount < tarea.disponibilidad &&
                                     usuarioActual.rol == RolUsuario.ARRENDATARIO) {
@@ -232,7 +351,6 @@ fun TareaAsignacionChip(
     onRevisar: () -> Unit,
     onLiberar: () -> Unit
 ) {
-    // Determinar propiedades del chip según estado
     val chipColor: Color
     val chipIcon: ImageVector?
     val chipTexto: String
@@ -303,14 +421,15 @@ fun TareaAsignacionChip(
         }
     }
 
-    // Composable del chip
     AssistChip(
         onClick = { if (chipHabilitado) chipAccion() },
         label = {
             Text(chipTexto, style = MaterialTheme.typography.bodySmall)
         },
-        leadingIcon = chipIcon?.let { icon ->
-            { Icon(icon, null, Modifier.size(16.dp)) }
+        leadingIcon = if (chipIcon != null) {
+            { Icon(chipIcon, null, Modifier.size(16.dp)) }
+        } else {
+            null
         },
         colors = AssistChipDefaults.assistChipColors(
             containerColor = chipColor

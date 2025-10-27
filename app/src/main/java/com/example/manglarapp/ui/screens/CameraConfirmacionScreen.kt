@@ -8,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +20,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.manglarapp.domain.model.DiaSemana
 import com.example.manglarapp.utils.CameraHelper
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraConfirmacionScreen(
     tareaId: String,
@@ -34,7 +35,6 @@ fun CameraConfirmacionScreen(
     var permissionDenied by remember { mutableStateOf(false) }
     var shouldLaunchCamera by remember { mutableStateOf(false) }
 
-    // Verificar si ya tiene permiso
     val hasCameraPermission = remember {
         ContextCompat.checkSelfPermission(
             context,
@@ -42,8 +42,6 @@ fun CameraConfirmacionScreen(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // ⭐ IMPORTANTE: Definir launchers PRIMERO
-    // Launcher para capturar foto
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -53,19 +51,16 @@ fun CameraConfirmacionScreen(
         shouldLaunchCamera = false
     }
 
-    // Launcher para solicitar permiso
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Permiso concedido, preparar para abrir cámara
             shouldLaunchCamera = true
         } else {
             permissionDenied = true
         }
     }
 
-    // Effect para lanzar cámara cuando se conceda el permiso
     LaunchedEffect(shouldLaunchCamera) {
         if (shouldLaunchCamera) {
             val uri = CameraHelper.createImageUri(context)
@@ -74,127 +69,135 @@ fun CameraConfirmacionScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Ícono de cámara
-        Icon(
-            imageVector = Icons.Default.CameraAlt,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Nombre de la tarea
-        Text(
-            text = tareaNombre.uppercase(),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Confirma que hiciste tu tarea!",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.tertiary
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Mostrar imagen capturada
-        imageUri?.let { uri ->
-            Card(
-                modifier = Modifier
-                    .size(250.dp)
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(uri),
-                    contentDescription = "Foto de confirmación",
-                    modifier = Modifier.fillMaxSize()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Confirmar Tarea") },
+                navigationIcon = {
+                    IconButton(onClick = onCancelar) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            "Cancelar",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
-            }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
-        }
 
-        // Botón para tomar/retomar foto
-        Button(
-            onClick = {
-                when {
-                    hasCameraPermission -> {
-                        // Ya tiene permiso, abrir cámara directamente
-                        val uri = CameraHelper.createImageUri(context)
-                        tempImageUri = uri
-                        cameraLauncher.launch(uri)
-                    }
-                    else -> {
-                        // Solicitar permiso
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+            Text(
+                text = tareaNombre.uppercase(),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary
             )
-        ) {
-            Icon(Icons.Default.CameraAlt, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(if (imageUri == null) "TOMAR FOTO" else "VOLVER A TOMAR")
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Botón confirmar (solo si hay foto)
-        if (imageUri != null) {
+            Text(
+                text = "Confirma que hiciste tu tarea!",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.tertiary
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            imageUri?.let { uri ->
+                Card(
+                    modifier = Modifier
+                        .size(250.dp)
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(uri),
+                        contentDescription = "Foto de confirmación",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             Button(
                 onClick = {
-                    onConfirmar(imageUri.toString())
+                    when {
+                        hasCameraPermission -> {
+                            val uri = CameraHelper.createImageUri(context)
+                            tempImageUri = uri
+                            cameraLauncher.launch(uri)
+                        }
+                        else -> {
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("CONFIRMAR TAREA")
+                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(if (imageUri == null) "TOMAR FOTO" else "VOLVER A TOMAR")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-        }
 
-        // Botón cancelar
-        TextButton(onClick = onCancelar) {
-            Text("Cancelar")
-        }
+            if (imageUri != null) {
+                Button(
+                    onClick = {
+                        onConfirmar(imageUri.toString())
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("CONFIRMAR TAREA")
+                }
+            }
 
-        // Mensaje si no hay permiso
-        if (permissionDenied) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = "Se requiere permiso de cámara para continuar. " +
-                            "Por favor, habilítalo en Configuración.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(12.dp)
-                )
+            if (permissionDenied) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = "Se requiere permiso de cámara para continuar. " +
+                                "Por favor, habilítalo en Configuración.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
         }
     }

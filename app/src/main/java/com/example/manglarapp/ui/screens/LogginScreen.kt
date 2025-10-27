@@ -19,9 +19,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
-import com.example.manglarapp.domain.model.DiaSemana
 import com.example.manglarapp.utils.CameraHelper
-
 
 @Composable
 fun LoginScreen(
@@ -36,20 +34,16 @@ fun LoginScreen(
     var tempFotoUri by remember { mutableStateOf<Uri?>(null) }
     var shouldLaunchCamera by remember { mutableStateOf(false) }
 
-    // ⭐ Launchers definidos PRIMERO
-    // Launcher para cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && tempFotoUri != null) {
             fotoUri = tempFotoUri
-            // Simular reconocimiento facial
             onLoginSuccess("Felipe")
         }
         shouldLaunchCamera = false
     }
 
-    // Launcher para permiso
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -58,7 +52,6 @@ fun LoginScreen(
         }
     }
 
-    // Effect para lanzar cámara
     LaunchedEffect(shouldLaunchCamera) {
         if (shouldLaunchCamera) {
             val uri = CameraHelper.createImageUri(context)
@@ -78,7 +71,6 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Logo
             Text(
                 text = "M",
                 style = MaterialTheme.typography.displayLarge,
@@ -94,7 +86,6 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             if (modoFoto) {
-                // Modo login con foto
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -153,7 +144,6 @@ fun LoginScreen(
                     }
                 }
             } else {
-                // Modo login tradicional
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },

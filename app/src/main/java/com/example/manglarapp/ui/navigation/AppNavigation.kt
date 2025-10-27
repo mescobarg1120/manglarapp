@@ -36,9 +36,8 @@ fun AppNavigation(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { nombreUsuario ->
-                    // Simular obtención de usuario
                     usuarioActual = Usuario(
-                        id = "1",
+                        id = if (nombreUsuario.lowercase() == "admin") "0" else "1",
                         nombre = nombreUsuario,
                         rol = if (nombreUsuario.lowercase() == "admin") {
                             RolUsuario.ADMIN
@@ -69,8 +68,14 @@ fun AppNavigation(
                             )
                         }
                     },
-                    onRevisarTarea = { _, _ ->
+                    onRevisarTarea = {
                         navController.navigate(Screen.RevisionTareas.route)
+                    },
+                    onLogout = {
+                        usuarioActual = null
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -79,7 +84,9 @@ fun AppNavigation(
         composable(Screen.RevisionTareas.route) {
             RevisionTareasScreen(
                 viewModel = tareasViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
 

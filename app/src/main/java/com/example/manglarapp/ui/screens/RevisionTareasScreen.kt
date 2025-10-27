@@ -32,12 +32,17 @@ fun RevisionTareasScreen(
                 title = { Text("Tareas Pendientes") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -86,7 +91,6 @@ fun RevisionTareasScreen(
         }
     }
 
-    // Dialog de rechazo
     if (showDialogRechazo && tareaSeleccionada != null) {
         AlertDialog(
             onDismissRequest = { showDialogRechazo = false },
@@ -148,7 +152,6 @@ fun TareaPendienteCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -173,7 +176,6 @@ fun TareaPendienteCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Foto
             asignacion.fotoConfirmacion?.let { fotoUri ->
                 Card(
                     modifier = Modifier
@@ -190,7 +192,6 @@ fun TareaPendienteCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botones
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
