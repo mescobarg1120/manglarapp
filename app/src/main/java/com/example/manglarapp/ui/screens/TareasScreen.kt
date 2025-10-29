@@ -33,7 +33,15 @@ fun TareasScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var showMenuExpanded by remember { mutableStateOf(false) }
 
-    // Interceptar botón físico "Atrás"
+    // ⭐ CONTADOR NUCLEAR
+    var recompositionTrigger by remember { mutableStateOf(0) }
+
+    LaunchedEffect(tareas) {
+        recompositionTrigger++
+        println("🔴 RECOMPOSICIÓN FORZADA: $recompositionTrigger")
+        println("🔴 TAREAS: ${tareas.map { "${it.id}: ${it.asignaciones.size} asignaciones" }}")
+    }
+
     BackHandler {
         showExitDialog = true
     }
@@ -56,7 +64,6 @@ fun TareasScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
-                    // Badge de tareas pendientes (solo admin)
                     if (usuarioActual.rol == RolUsuario.ADMIN) {
                         val pendientes = viewModel.obtenerTareasPendientes()
                         if (pendientes.isNotEmpty()) {
@@ -72,7 +79,6 @@ fun TareasScreen(
                         }
                     }
 
-                    // Menú de opciones
                     Box {
                         IconButton(onClick = { showMenuExpanded = true }) {
                             Icon(Icons.Default.MoreVert, "Menú")
@@ -89,7 +95,6 @@ fun TareasScreen(
                                 },
                                 onClick = {
                                     showMenuExpanded = false
-                                    // TODO: Navegar a perfil
                                 }
                             )
 
@@ -100,7 +105,6 @@ fun TareasScreen(
                                 },
                                 onClick = {
                                     showMenuExpanded = false
-                                    // TODO: Navegar a configuración
                                 }
                             )
 
@@ -159,17 +163,26 @@ fun TareasScreen(
                 }
             }
 
+            // ⭐ LazyColumn sin key
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(tareas) { tarea ->
+                items(
+                    items = tareas,
+                    key = { tarea ->
+                        // ⭐ KEY incluye el trigger para forzar recomposición
+                        "${tarea.id}_${tarea.asignaciones.hashCode()}_$recompositionTrigger"
+                    }
+                ) { tarea ->
                     TareaCard(
                         tarea = tarea,
                         usuarioActual = usuarioActual,
                         modoEdicion = modoEdicion,
+                        recompositionTrigger = recompositionTrigger,
                         onTomarTarea = { dia ->
+                            println("🟢 CLICK TOMAR: ${tarea.id} - $dia")
                             viewModel.tomarTarea(tarea.id, dia, usuarioActual)
                         },
                         onCompletarTarea = { dia ->
@@ -187,7 +200,6 @@ fun TareasScreen(
         }
     }
 
-    // Diálogo de confirmación de logout
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -215,7 +227,6 @@ fun TareasScreen(
         )
     }
 
-    // Diálogo de confirmación de salida (botón físico atrás)
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -246,6 +257,7 @@ fun TareaCard(
     tarea: Tarea,
     usuarioActual: Usuario,
     modoEdicion: Boolean,
+    recompositionTrigger: Int,
     onTomarTarea: (DiaSemana) -> Unit,
     onCompletarTarea: (DiaSemana) -> Unit,
     onRevisarTarea: (DiaSemana) -> Unit,
@@ -273,7 +285,17 @@ fun TareaCard(
                 Row {
                     Text("${tarea.puntos} Pts", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("N° ${tarea.disponibilidad}", style = MaterialTheme.typography.bodyMedium)
+                    // ⭐ Mostrar cuántas quedan disponibles
+                    val tareasRestantes = tarea.disponibilidad - tarea.asignaciones.size
+                    Text(
+                        text = "N° $tareasRestantes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (tareasRestantes > 0) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        }
+                    )
                 }
             }
 
@@ -292,46 +314,59 @@ fun TareaCard(
                     }
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     DiaSemana.values().forEach { dia ->
                         val asignacion = tarea.asignaciones[dia]
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = dia.name,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.width(80.dp)
-                            )
-
-                            if (asignacion != null) {
-                                TareaAsignacionChip(
-                                    asignacion = asignacion,
-                                    dia = dia,
-                                    usuarioActual = usuarioActual,
-                                    onCompletar = { onCompletarTarea(dia) },
-                                    onRevisar = { onRevisarTarea(dia) },
-                                    onLiberar = { onLiberarTarea(dia) }
+                        key("${tarea.id}_${dia.name}_${asignacion?.hashCode() ?: 0}_$recompositionTrigger") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = dia.name,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.width(80.dp)
                                 )
-                            } else {
-                                val tareasTomadasCount = tarea.asignaciones.values.filterNotNull().size
-                                if (tareasTomadasCount < tarea.disponibilidad &&
-                                    usuarioActual.rol == RolUsuario.ARRENDATARIO) {
-                                    FilledTonalButton(
-                                        onClick = { onTomarTarea(dia) },
-                                        modifier = Modifier.height(32.dp)
-                                    ) {
-                                        Text("Tomar", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                } else {
-                                    Text(
-                                        text = "-",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                                if (asignacion != null) {
+                                    TareaAsignacionChip(
+                                        asignacion = asignacion,
+                                        dia = dia,
+                                        usuarioActual = usuarioActual,
+                                        onCompletar = { onCompletarTarea(dia) },
+                                        onRevisar = { onRevisarTarea(dia) },
+                                        onLiberar = { onLiberarTarea(dia) }
                                     )
+                                } else {
+                                    // ⭐ CORRECCIÓN: Contar correctamente las tareas tomadas
+                                    val tareasTomadasCount = tarea.asignaciones.size
+
+                                    if (tareasTomadasCount < tarea.disponibilidad &&
+                                        usuarioActual.rol == RolUsuario.ARRENDATARIO) {
+                                        FilledTonalButton(
+                                            onClick = {
+                                                println("🟢 BOTÓN TOMAR PRESIONADO: ${tarea.id} - $dia (${tareasTomadasCount}/${tarea.disponibilidad})")
+                                                onTomarTarea(dia)
+                                            },
+                                            modifier = Modifier.height(32.dp)
+                                        ) {
+                                            Text("Tomar", style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    } else {
+                                        Text(
+                                            text = if (tareasTomadasCount >= tarea.disponibilidad) "Completo" else "-",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (tareasTomadasCount >= tarea.disponibilidad) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

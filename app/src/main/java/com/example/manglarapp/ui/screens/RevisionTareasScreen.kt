@@ -21,7 +21,14 @@ fun RevisionTareasScreen(
     viewModel: TareasViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val tareasPendientes = viewModel.obtenerTareasPendientes()
+    // ✅ Observar cambios en tareas
+    val tareas by viewModel.tareas.collectAsState()
+
+    // ✅ Recalcular cuando tareas cambie
+    val tareasPendientes = remember(tareas) {
+        viewModel.obtenerTareasPendientes()
+    }
+
     var tareaSeleccionada by remember { mutableStateOf<Triple<Tarea, DiaSemana, AsignacionTarea>?>(null) }
     var showDialogRechazo by remember { mutableStateOf(false) }
     var comentarioRechazo by remember { mutableStateOf("") }
@@ -73,7 +80,10 @@ fun RevisionTareasScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(tareasPendientes) { (tarea, dia, asignacion) ->
+                items(
+                    items = tareasPendientes,
+                    key = { (tarea, dia, _) -> "${tarea.id}_${dia.name}" }
+                ) { (tarea, dia, asignacion) ->
                     TareaPendienteCard(
                         tarea = tarea,
                         dia = dia,

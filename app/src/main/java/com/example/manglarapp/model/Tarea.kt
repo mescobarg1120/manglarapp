@@ -8,7 +8,8 @@ data class Tarea(
     val disponibilidad: Int,
     val puntos: Int,
     val reglas: String = "",
-    val asignaciones: MutableMap<DiaSemana, AsignacionTarea?> = mutableMapOf()
+    // ⭐ CAMBIO CRÍTICO: Map inmutable sin nullable
+    val asignaciones: Map<DiaSemana, AsignacionTarea> = mapOf()
 )
 
 data class AsignacionTarea(
