@@ -1,135 +1,146 @@
 package com.example.manglarapp.data
 
+import android.util.Log
 import com.example.manglarapp.model.EstadoUsuario
 import com.example.manglarapp.model.Usuario
-import kotlinx.coroutines.delay
+import com.example.manglarapp.network.ApiConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-/**
- * Repository para gestionar operaciones CRUD de usuarios
- * En una aplicación real, esto se conectaría a una base de datos o API
- */
+
 class UsuariosRepository {
 
-    // Simulación de base de datos en memoria
-    private val usuariosInMemory = mutableListOf(
-        Usuario(
-            rut = "12.633.195-9",
-            nombre = "Cristina Gonzalez",
-            email = "m.escobar2@duocuc.cl",
-            rol = "Usuario",
-            estado = EstadoUsuario.ACTIVO,
-            password = "123456"
-        )
-    )
+    private val api = ApiConfig.usuarioApi
+    private val TAG = "UsuariosRepositoryApi"
 
     /**
-     * Obtiene todos los usuarios
+     * Obtiene todos los usuarios desde la API
      */
     fun obtenerUsuarios(): Flow<List<Usuario>> = flow {
-        emit(usuariosInMemory.toList())
+        try {
+            val response = api.obtenerTodos()
+            if (response.isSuccessful) {
+                emit(response.body() ?: emptyList())
+            } else {
+                Log.e(TAG, "Error al obtener usuarios: ${response.code()}")
+                emit(emptyList())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción al obtener usuarios", e)
+            emit(emptyList())
+        }
     }
 
     /**
-     * Obtiene un usuario por RUT
+     * Obtiene un usuario por RUT desde la API
      */
     suspend fun obtenerUsuarioPorRut(rut: String): Usuario? {
-        delay(100) // Simula latencia de red
-        return usuariosInMemory.find { it.rut == rut }
+        return try {
+            val response = api.obtenerPorRut(rut)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                Log.e(TAG, "Error al obtener usuario: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción al obtener usuario", e)
+            null
+        }
     }
 
     /**
-     * Crea un nuevo usuario
+     * Crea un nuevo usuario en la API
      */
     suspend fun crearUsuario(usuario: Usuario): Result<Usuario> {
         return try {
-            delay(200) // Simula latencia de red
-
-            // Validar que no exista usuario con mismo RUT
-            if (usuariosInMemory.any { it.rut == usuario.rut }) {
-                return Result.failure(Exception("Ya existe un usuario con este RUT"))
+            val response = api.crear(usuario)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al crear usuario: ${response.code()}"))
             }
-
-            usuariosInMemory.add(usuario)
-            Result.success(usuario)
         } catch (e: Exception) {
+            Log.e(TAG, "Excepción al crear usuario", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Actualiza un usuario existente
+     * Actualiza un usuario existente en la API
      */
     suspend fun actualizarUsuario(usuario: Usuario): Result<Usuario> {
         return try {
-            delay(200) // Simula latencia de red
-
-            val index = usuariosInMemory.indexOfFirst { it.rut == usuario.rut }
-            if (index == -1) {
-                return Result.failure(Exception("Usuario no encontrado"))
+            val response = api.actualizar(usuario.rut, usuario)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al actualizar usuario: ${response.code()}"))
             }
-
-            usuariosInMemory[index] = usuario
-            Result.success(usuario)
         } catch (e: Exception) {
+            Log.e(TAG, "Excepción al actualizar usuario", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Elimina un usuario por RUT
+     * Elimina un usuario por RUT desde la API
      */
     suspend fun eliminarUsuario(rut: String): Result<Unit> {
         return try {
-            delay(200) // Simula latencia de red
-
-            val removed = usuariosInMemory.removeIf { it.rut == rut }
-            if (!removed) {
-                return Result.failure(Exception("Usuario no encontrado"))
+            val response = api.eliminar(rut)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error al eliminar usuario: ${response.code()}"))
             }
-
-            Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Excepción al eliminar usuario", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Busca usuarios por nombre o RUT
+     * Busca usuarios por nombre o RUT en la API
      */
     fun buscarUsuarios(query: String): Flow<List<Usuario>> = flow {
-        delay(100) // Simula latencia de red
-
-        if (query.isBlank()) {
-            emit(usuariosInMemory.toList())
-        } else {
-            val resultados = usuariosInMemory.filter { usuario ->
-                usuario.nombre.contains(query, ignoreCase = true) ||
-                        usuario.rut.contains(query, ignoreCase = true) ||
-                        usuario.email.contains(query, ignoreCase = true)
+        try {
+            if (query.isBlank()) {
+                val response = api.obtenerTodos()
+                if (response.isSuccessful) {
+                    emit(response.body() ?: emptyList())
+                } else {
+                    emit(emptyList())
+                }
+            } else {
+                val response = api.buscar(query)
+                if (response.isSuccessful) {
+                    emit(response.body() ?: emptyList())
+                } else {
+                    emit(emptyList())
+                }
             }
-            emit(resultados)
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción al buscar usuarios", e)
+            emit(emptyList())
         }
     }
 
     /**
      * Cambia el estado de un usuario
+     * Nota: Primero obtiene el usuario, cambia su estado y lo actualiza
      */
     suspend fun cambiarEstadoUsuario(rut: String, nuevoEstado: EstadoUsuario): Result<Usuario> {
         return try {
-            delay(150)
-
-            val index = usuariosInMemory.indexOfFirst { it.rut == rut }
-            if (index == -1) {
-                return Result.failure(Exception("Usuario no encontrado"))
+            val usuario = obtenerUsuarioPorRut(rut)
+            if (usuario != null) {
+                val usuarioActualizado = usuario.copy(estado = nuevoEstado)
+                actualizarUsuario(usuarioActualizado)
+            } else {
+                Result.failure(Exception("Usuario no encontrado"))
             }
-
-            val usuarioActualizado = usuariosInMemory[index].copy(estado = nuevoEstado)
-            usuariosInMemory[index] = usuarioActualizado
-
-            Result.success(usuarioActualizado)
         } catch (e: Exception) {
+            Log.e(TAG, "Excepción al cambiar estado usuario", e)
             Result.failure(e)
         }
     }
