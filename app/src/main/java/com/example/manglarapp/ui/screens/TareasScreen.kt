@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.viewmodel.TareasViewModel
+import com.example.manglarapp.viewmodel.UsuariosViewModel
+import com.example.manglarapp.model.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +66,7 @@ fun TareasScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
-                    if (usuarioActual.rol == RolUsuario.ADMIN) {
+                    if (usuarioActual.rol == "ADMIN") {
                         val pendientes = viewModel.obtenerTareasPendientes()
                         if (pendientes.isNotEmpty()) {
                             BadgedBox(
@@ -126,7 +128,7 @@ fun TareasScreen(
             )
         },
         floatingActionButton = {
-            if (usuarioActual.rol == RolUsuario.ADMIN) {
+            if (usuarioActual.rol == "ADMIN") {
                 FloatingActionButton(
                     onClick = onNavigateToAgregar,
                     containerColor = MaterialTheme.colorScheme.secondary
@@ -153,7 +155,7 @@ fun TareasScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                if (usuarioActual.rol == RolUsuario.ADMIN) {
+                if (usuarioActual.rol == "ADMIN") {
                     IconButton(onClick = { viewModel.toggleModoEdicion() }) {
                         Icon(
                             imageVector = if (modoEdicion) Icons.Default.Check else Icons.Default.Edit,
@@ -336,7 +338,7 @@ fun TareaCard(
                                     TareaAsignacionChip(
                                         asignacion = asignacion,
                                         dia = dia,
-                                        usuarioActual = usuarioActual,
+                                        usuarioActual = Usuario,
                                         onCompletar = { onCompletarTarea(dia) },
                                         onRevisar = { onRevisarTarea(dia) },
                                         onLiberar = { onLiberarTarea(dia) }
@@ -346,7 +348,7 @@ fun TareaCard(
                                     val tareasTomadasCount = tarea.asignaciones.size
 
                                     if (tareasTomadasCount < tarea.disponibilidad &&
-                                        usuarioActual.rol == RolUsuario.ARRENDATARIO) {
+                                        usuarioActual.rol == "ARRENDATARIO") {
                                         FilledTonalButton(
                                             onClick = {
                                                 println("🟢 BOTÓN TOMAR PRESIONADO: ${tarea.id} - $dia (${tareasTomadasCount}/${tarea.disponibilidad})")
@@ -381,7 +383,7 @@ fun TareaCard(
 fun TareaAsignacionChip(
     asignacion: AsignacionTarea,
     dia: DiaSemana,
-    usuarioActual: Usuario,
+    usuarioActual: UsuariosViewModel,
     onCompletar: () -> Unit,
     onRevisar: () -> Unit,
     onLiberar: () -> Unit
@@ -410,7 +412,7 @@ fun TareaAsignacionChip(
         }
 
         EstadoAsignacion.PENDIENTE_APROBACION -> {
-            if (usuarioActual.rol == RolUsuario.ADMIN) {
+            if (usuarioActual.rol == "ADMIN") {
                 chipColor = Color(0xFFFFA726)
                 chipIcon = Icons.Default.Visibility
                 chipTexto = asignacion.usuarioNombre

@@ -1,10 +1,11 @@
 package com.example.manglarapp.data.repository
 
 import com.example.manglarapp.domain.model.*
+import com.example.manglarapp.viewmodel.UsuariosViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-
+import com.example.manglarapp.model.Usuario
 class TareasRepository {
 
     private val _tareas = MutableStateFlow<List<Tarea>>(emptyList())
@@ -72,23 +73,31 @@ class TareasRepository {
     }
 
     fun tomarTarea(tareaId: String, dia: DiaSemana, usuario: Usuario) {
+        // Verificar que el usuario tenga datos válidos
+        if (usuario.rut.isBlank()) {
+            println("❌ ERROR: Usuario sin RUT")
+            return
+        }
+
+        if (usuario.nombre.isBlank()) {
+            println("⚠️ ADVERTENCIA: Usuario sin nombre, usando RUT")
+        }
+
         println("🔵 REPOSITORY - TOMANDO TAREA: $tareaId - $dia - ${usuario.nombre}")
 
         _tareas.update { tareasList ->
             tareasList.map { tarea ->
                 if (tarea.id == tareaId) {
-                    val tareasTomadasCount = tarea.asignaciones.size
+                    val tareaTomadasCount = tarea.asignaciones.size
 
-                    if (tareasTomadasCount < tarea.disponibilidad) {
+                    if (tareaTomadasCount < tarea.disponibilidad) {
                         val nuevaAsignacion = AsignacionTarea(
-                            usuarioId = usuario.id,
-                            usuarioNombre = usuario.nombre,
+                            usuarioId = usuario.rut,
+                            usuarioNombre = usuario.nombre.ifBlank { usuario.rut }, // ✅ Fallback
                             estado = EstadoAsignacion.TOMADA
                         )
 
-                        // ⭐ Crear nuevo Map inmutable
                         val nuevasAsignaciones = tarea.asignaciones + (dia to nuevaAsignacion)
-
                         val nuevaTarea = tarea.copy(asignaciones = nuevasAsignaciones)
                         println("🟢 REPOSITORY - TAREA ACTUALIZADA: ${nuevaTarea.asignaciones[dia]}")
                         nuevaTarea
@@ -101,8 +110,6 @@ class TareasRepository {
                 }
             }
         }
-
-        println("🔴 REPOSITORY - ESTADO FINAL: ${_tareas.value.find { it.id == tareaId }?.asignaciones}")
     }
 
     fun completarTarea(tareaId: String, dia: DiaSemana, fotoUri: String) {

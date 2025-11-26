@@ -11,6 +11,8 @@ import androidx.navigation.navArgument
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.ui.screens.*
 import com.example.manglarapp.viewmodel.TareasViewModel
+import com.example.manglarapp.viewmodel.UsuariosViewModel
+import com.example.manglarapp.ui.screens.FinanzasScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
@@ -27,7 +29,7 @@ fun AppNavigation(
     navController: NavHostController = rememberNavController(),
     tareasViewModel: TareasViewModel = viewModel()
 ) {
-    var usuarioActual by remember { mutableStateOf<Usuario?>(null) }
+    var usuarioActual by remember { mutableStateOf<UsuariosViewModel?>(null) }
 
     NavHost(
         navController = navController,
@@ -36,7 +38,7 @@ fun AppNavigation(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { nombreUsuario ->
-                    usuarioActual = Usuario(
+                    usuarioActual = UsuariosViewModel(
                         id = if (nombreUsuario.lowercase() == "admin") "0" else "1",
                         nombre = nombreUsuario,
                         rol = if (nombreUsuario.lowercase() == "admin") {
@@ -114,6 +116,17 @@ fun AppNavigation(
                 onCancelar = {
                     navController.popBackStack()
                 }
+            )
+        }
+        composable("usuarios") {
+            UsuariosScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("finanzas") {
+            FinanzasScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
