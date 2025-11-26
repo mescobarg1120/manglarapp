@@ -345,6 +345,7 @@ private fun ChipEstado(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogoUsuario(
     titulo: String,
