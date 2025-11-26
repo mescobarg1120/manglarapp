@@ -338,7 +338,7 @@ fun TareaCard(
                                     TareaAsignacionChip(
                                         asignacion = asignacion,
                                         dia = dia,
-                                        usuarioActual = Usuario,
+                                        usuarioActual = usuarioActual,
                                         onCompletar = { onCompletarTarea(dia) },
                                         onRevisar = { onRevisarTarea(dia) },
                                         onLiberar = { onLiberarTarea(dia) }
@@ -383,7 +383,7 @@ fun TareaCard(
 fun TareaAsignacionChip(
     asignacion: AsignacionTarea,
     dia: DiaSemana,
-    usuarioActual: UsuariosViewModel,
+    usuarioActual: Usuario,
     onCompletar: () -> Unit,
     onRevisar: () -> Unit,
     onLiberar: () -> Unit
@@ -396,7 +396,7 @@ fun TareaAsignacionChip(
 
     when (asignacion.estado) {
         EstadoAsignacion.TOMADA -> {
-            if (asignacion.usuarioId == usuarioActual.id) {
+            if (asignacion.usuarioId== usuarioActual.rut) {
                 chipColor = MaterialTheme.colorScheme.tertiary
                 chipIcon = Icons.Default.CameraAlt
                 chipTexto = asignacion.usuarioNombre
@@ -418,7 +418,7 @@ fun TareaAsignacionChip(
                 chipTexto = asignacion.usuarioNombre
                 chipHabilitado = true
                 chipAccion = onRevisar
-            } else if (asignacion.usuarioId == usuarioActual.id) {
+            } else if (asignacion.usuarioId == usuarioActual.rut) {
                 chipColor = Color(0xFFFFA726)
                 chipIcon = Icons.Default.HourglassEmpty
                 chipTexto = "Esperando..."
@@ -442,7 +442,7 @@ fun TareaAsignacionChip(
         }
 
         EstadoAsignacion.RECHAZADA -> {
-            if (asignacion.usuarioId == usuarioActual.id) {
+            if (asignacion.usuarioId == usuarioActual.rut) {
                 chipColor = MaterialTheme.colorScheme.error
                 chipIcon = Icons.Default.Refresh
                 chipTexto = "Reintentar"
@@ -475,3 +475,4 @@ fun TareaAsignacionChip(
         modifier = Modifier.height(32.dp)
     )
 }
+

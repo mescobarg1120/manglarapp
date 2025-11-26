@@ -480,6 +480,7 @@ private fun FilaResumen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogoGasto(
     onDismiss: () -> Unit,
