@@ -2,7 +2,6 @@ package com.example.manglarapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.manglarapp.data.FinanzasRepository
 import com.example.manglarapp.model.Finanza
 import com.example.manglarapp.model.FinanzaValidationErrors
 import com.example.manglarapp.model.FinanzasUiState

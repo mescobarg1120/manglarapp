@@ -1,205 +1,299 @@
 package com.example.manglarapp.data
 
-import android.util.Log
 import com.example.manglarapp.model.Finanza
 import com.example.manglarapp.model.TipoFinanza
 import com.example.manglarapp.model.UsuarioFinanza
-import com.example.manglarapp.network.ApiConfig
+import com.example.manglarapp.network.NetworkResult
+import com.example.manglarapp.network.RetrofitClient
+import com.example.manglarapp.network.dto.*
+import com.example.manglarapp.network.safeApiCall
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
+import kotlin.collections.filter
+import kotlin.collections.indexOfFirst
+import kotlin.collections.map
+import kotlin.collections.sumOf
+import kotlin.collections.toList
 
 /**
- * Repository para gestionar operaciones de finanzas consumiendo API REST
+ * Repository para gestionar operaciones de finanzas del hogar
+ * Conectado al backend de Spring Boot con MySQL
  */
 class FinanzasRepository {
 
-    private val api = ApiConfig.finanzaApi
-    private val TAG = "FinanzasRepositoryApi"
+    private val apiService = RetrofitClient.finanzasApi
+
+    // Cache local (fallback en caso de error de red)
+    private val usuariosFinanzas = mutableListOf(
+        UsuarioFinanza(
+            usuarioId = "12.633.195-9",
+            nombre = "Felipe",
+            puntos = 10,
+            totalAbono = 20000.0,
+            totalDeuda = 14000.0
+        ),
+        UsuarioFinanza(
+            usuarioId = "18.234.567-8",
+            nombre = "Kototo",
+            puntos = 2,
+            totalAbono = 20000.0,
+            totalDeuda = 34000.0
+        ),
+        UsuarioFinanza(
+            usuarioId = "15.678.901-2",
+            nombre = "Mati",
+            puntos = 0,
+            totalAbono = 40000.0,
+            totalDeuda = 0.0
+        ),
+        UsuarioFinanza(
+            usuarioId = "19.876.543-k",
+            nombre = "Santi",
+            puntos = 0,
+            totalAbono = 10000.0,
+            totalDeuda = 0.0
+        ),
+        UsuarioFinanza(
+            usuarioId = "17.345.678-3",
+            nombre = "Fran",
+            puntos = 0,
+            totalAbono = 20000.0,
+            totalDeuda = 0.0
+        )
+    )
+
+    private val gastos = mutableListOf(
+        Finanza(
+            id = 1,
+            usuarioId = "12.633.195-9",
+            tipo = TipoFinanza.EGRESO,
+            monto = 40000.0,
+            descripcion = "Feria",
+            fecha = "01/10/25",
+            categoria = "Alimentación"
+        ),
+        Finanza(
+            id = 2,
+            usuarioId = "18.234.567-8",
+            tipo = TipoFinanza.EGRESO,
+            monto = 20000.0,
+            descripcion = "Productos de Aseo",
+            fecha = "04/10/25",
+            categoria = "Limpieza"
+        ),
+        Finanza(
+            id = 3,
+            usuarioId = "15.678.901-2",
+            tipo = TipoFinanza.EGRESO,
+            monto = 200000.0,
+            descripcion = "Arreglo Techo",
+            fecha = "10/10/25",
+            categoria = "Mantención"
+        )
+    )
 
     /**
-     * Obtiene las finanzas de todos los usuarios desde la API
+     * Obtiene las finanzas de todos los usuarios desde el backend
      */
     fun obtenerUsuariosFinanzas(): Flow<List<UsuarioFinanza>> = flow {
-        try {
-            val response = api.obtenerUsuariosFinanza()
-            if (response.isSuccessful) {
-                emit(response.body() ?: emptyList())
-            } else {
-                Log.e(TAG, "Error al obtener usuarios finanza: ${response.code()}")
-                emit(emptyList())
+        val result = safeApiCall(
+            apiCall = { apiService.obtenerUsuariosFinanzas() },
+            transform = { usuarios -> usuarios.map { it.toUsuarioFinanza() } }
+        )
+
+        when (result) {
+            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Error -> {
+                println("Error obteniendo usuarios finanzas: ${result.message}")
+                FlowCollector.emit(usuariosFinanzas.toList())
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al obtener usuarios finanza", e)
-            emit(emptyList())
+
+            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
         }
     }
 
     /**
-     * Obtiene todos los gastos desde la API
+     * Obtiene todos los gastos desde el backend
      */
     fun obtenerGastos(): Flow<List<Finanza>> = flow {
-        try {
-            val response = api.obtenerGastos()
-            if (response.isSuccessful) {
-                emit(response.body() ?: emptyList())
-            } else {
-                Log.e(TAG, "Error al obtener gastos: ${response.code()}")
-                emit(emptyList())
+        val result = safeApiCall(
+            apiCall = { apiService.obtenerGastos() },
+            transform = { gastosDto -> gastosDto.map { it.toFinanza() } }
+        )
+
+        when (result) {
+            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Error -> {
+                println("Error obteniendo gastos: ${result.message}")
+                FlowCollector.emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al obtener gastos", e)
-            emit(emptyList())
+
+            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
         }
     }
 
     /**
-     * Obtiene gastos por mes
-     * Nota: Por ahora devuelve todos los gastos
+     * Obtiene gastos por mes desde el backend
      */
     fun obtenerGastosPorMes(mes: String): Flow<List<Finanza>> = flow {
-        try {
-            val response = api.obtenerGastos()
-            if (response.isSuccessful) {
-                // TODO: Filtrar por mes en el futuro
-                emit(response.body() ?: emptyList())
-            } else {
-                emit(emptyList())
+        val result = safeApiCall(
+            apiCall = { apiService.obtenerGastosPorMes(mes) },
+            transform = { gastosDto -> gastosDto.map { it.toFinanza() } }
+        )
+
+        when (result) {
+            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Error -> {
+                println("Error obteniendo gastos por mes: ${result.message}")
+                FlowCollector.emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al obtener gastos por mes", e)
-            emit(emptyList())
+
+            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
         }
     }
 
     /**
-     * Crea un nuevo gasto en la API
+     * Crea un nuevo gasto en el backend
      */
     suspend fun crearGasto(gasto: Finanza): Result<Finanza> {
         return try {
-            val response = api.crear(gasto)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error al crear gasto: ${response.code()}"))
+            val result = safeApiCall(
+                apiCall = { apiService.crearGasto(gasto.toFinanzaRequest()) },
+                transform = { it.toFinanza() }
+            )
+
+            when (result) {
+                is NetworkResult.Success -> {
+                    gastos.add(result.data)
+                    Result.success(result.data)
+                }
+                is NetworkResult.Error -> {
+                    Result.failure(kotlin.Exception(result.message))
+                }
+                is NetworkResult.Loading -> {
+                    Result.failure(kotlin.Exception("Operación en progreso"))
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Excepción al crear gasto", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Actualiza un gasto existente en la API
+     * Actualiza un gasto existente en el backend
      */
     suspend fun actualizarGasto(gasto: Finanza): Result<Finanza> {
         return try {
-            val response = api.actualizar(gasto.id.toLong(), gasto)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error al actualizar gasto: ${response.code()}"))
+            val result = safeApiCall(
+                apiCall = { apiService.actualizarGasto(gasto.id, gasto.toFinanzaRequest()) },
+                transform = { it.toFinanza() }
+            )
+
+            when (result) {
+                is NetworkResult.Success -> {
+                    val index = gastos.indexOfFirst { it.id == gasto.id }
+                    if (index != -1) {
+                        gastos[index] = result.data
+                    }
+                    Result.success(result.data)
+                }
+                is NetworkResult.Error -> {
+                    Result.failure(kotlin.Exception(result.message))
+                }
+                is NetworkResult.Loading -> {
+                    Result.failure(kotlin.Exception("Operación en progreso"))
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Excepción al actualizar gasto", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Elimina un gasto desde la API
+     * Elimina un gasto en el backend
      */
     suspend fun eliminarGasto(gastoId: Int): Result<Unit> {
         return try {
-            val response = api.eliminar(gastoId.toLong())
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Error al eliminar gasto: ${response.code()}"))
+            val result = safeApiCall(
+                apiCall = { apiService.eliminarGasto(gastoId) },
+                transform = { Unit }
+            )
+
+            when (result) {
+                is NetworkResult.Success -> {
+                    gastos.removeIf { it.id == gastoId }
+                    Result.success(Unit)
+                }
+                is NetworkResult.Error -> {
+                    Result.failure(kotlin.Exception(result.message))
+                }
+                is NetworkResult.Loading -> {
+                    Result.failure(kotlin.Exception("Operación en progreso"))
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Excepción al eliminar gasto", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Actualiza el abono de un usuario
+     * Actualiza el abono de un usuario en el backend
      */
     suspend fun actualizarAbonoUsuario(
         usuarioId: String,
         nuevoAbono: Double
     ): Result<UsuarioFinanza> {
         return try {
-            // Obtener el usuario finanza actual
-            val responseGet = api.obtenerUsuarioFinanzaPorId(usuarioId)
-            if (responseGet.isSuccessful && responseGet.body() != null) {
-                val usuarioFinanza = responseGet.body()!!
-                val actualizado = usuarioFinanza.copy(totalAbono = nuevoAbono)
+            val result = safeApiCall(
+                apiCall = {
+                    apiService.actualizarAbonoUsuario(
+                        usuarioId,
+                        ActualizarAbonoRequest(usuarioId, nuevoAbono)
+                    )
+                },
+                transform = { it.toUsuarioFinanza() }
+            )
 
-                val responseUpdate = api.actualizarUsuarioFinanza(usuarioId, actualizado)
-                if (responseUpdate.isSuccessful && responseUpdate.body() != null) {
-                    Result.success(responseUpdate.body()!!)
-                } else {
-                    Result.failure(Exception("Error al actualizar abono: ${responseUpdate.code()}"))
+            when (result) {
+                is NetworkResult.Success -> {
+                    val index = usuariosFinanzas.indexOfFirst { it.usuarioId == usuarioId }
+                    if (index != -1) {
+                        usuariosFinanzas[index] = result.data
+                    }
+                    Result.success(result.data)
                 }
-            } else {
-                Result.failure(Exception("Usuario finanza no encontrado"))
+                is NetworkResult.Error -> {
+                    Result.failure(kotlin.Exception(result.message))
+                }
+                is NetworkResult.Loading -> {
+                    Result.failure(kotlin.Exception("Operación en progreso"))
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Excepción al actualizar abono", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Calcula el total de ingresos desde la API
+     * Calcula el total de ingresos (se puede obtener del backend)
      */
-    suspend fun calcularTotalIngresos(): Double {
-        return try {
-            val response = api.obtenerResumen()
-            if (response.isSuccessful && response.body() != null) {
-                response.body()!!.totalIngresos
-            } else {
-                0.0
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al calcular ingresos", e)
-            0.0
-        }
+    fun calcularTotalIngresos(): Double {
+        return usuariosFinanzas.sumOf { it.totalAbono }
     }
 
     /**
-     * Calcula el total de gastos desde la API
+     * Calcula el total de gastos (se puede obtener del backend)
      */
-    suspend fun calcularTotalGastos(): Double {
-        return try {
-            val response = api.obtenerResumen()
-            if (response.isSuccessful && response.body() != null) {
-                response.body()!!.totalGastos
-            } else {
-                0.0
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al calcular gastos", e)
-            0.0
-        }
+    fun calcularTotalGastos(): Double {
+        return gastos.filter { it.tipo == TipoFinanza.EGRESO }.sumOf { it.monto }
     }
 
     /**
-     * Calcula el saldo (ingresos - gastos) desde la API
+     * Calcula el saldo (ingresos - gastos)
      */
-    suspend fun calcularSaldo(): Double {
-        return try {
-            val response = api.obtenerResumen()
-            if (response.isSuccessful && response.body() != null) {
-                response.body()!!.saldo
-            } else {
-                0.0
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Excepción al calcular saldo", e)
-            0.0
-        }
+    fun calcularSaldo(): Double {
+        return calcularTotalIngresos() - calcularTotalGastos()
     }
 
     /**
@@ -208,6 +302,7 @@ class FinanzasRepository {
     suspend fun exportarAExcel(): Result<String> {
         return try {
             // En producción, aquí generarías el archivo Excel real
+            // Podrías llamar a un endpoint del backend que genere el reporte
             Result.success("finanzas_${System.currentTimeMillis()}.xlsx")
         } catch (e: Exception) {
             Result.failure(e)

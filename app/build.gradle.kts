@@ -82,14 +82,19 @@ dependencies {
     // Coil para imágenes
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // Retrofit para consumo de API REST
+    // Retrofit para llamadas a la API
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp para interceptores y logging
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Gson para serialización JSON
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Coroutines para llamadas asíncronas
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
