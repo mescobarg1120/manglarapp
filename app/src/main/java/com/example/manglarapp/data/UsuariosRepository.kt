@@ -48,16 +48,16 @@ class UsuariosRepository {
 
         when (result) {
             is NetworkResult.Success -> {
-                FlowCollector.emit(result.data)
+                emit(result.data)
             }
 
             is NetworkResult.Error -> {
                 println("Error obteniendo usuarios: ${result.message}")
-                FlowCollector.emit(usuariosInMemory.toList())
+                emit(usuariosInMemory.toList())
             }
 
             is NetworkResult.Loading -> {
-                FlowCollector.emit(emptyList())
+                emit(emptyList())
             }
         }
     }
@@ -175,9 +175,9 @@ class UsuariosRepository {
                 transform = { usuarios -> usuarios.map { it.toUsuario() } }
             )
             when (result) {
-                is NetworkResult.Success -> FlowCollector.emit(result.data)
-                is NetworkResult.Error -> FlowCollector.emit(usuariosInMemory.toList())
-                is NetworkResult.Loading -> FlowCollector.emit(emptyList())
+                is NetworkResult.Success -> emit(result.data)
+                is NetworkResult.Error -> emit(usuariosInMemory.toList())
+                is NetworkResult.Loading -> emit(emptyList())
             }
         } else {
             val result = safeApiCall(
@@ -185,17 +185,17 @@ class UsuariosRepository {
                 transform = { usuarios -> usuarios.map { it.toUsuario() } }
             )
             when (result) {
-                is NetworkResult.Success -> FlowCollector.emit(result.data)
+                is NetworkResult.Success -> emit(result.data)
                 is NetworkResult.Error -> {
                     val resultados = usuariosInMemory.filter { usuario ->
                         usuario.nombre.contains(query, ignoreCase = true) ||
                                 usuario.rut.contains(query, ignoreCase = true) ||
                                 usuario.email.contains(query, ignoreCase = true)
                     }
-                    FlowCollector.emit(resultados)
+                    emit(resultados)
                 }
 
-                is NetworkResult.Loading -> FlowCollector.emit(emptyList())
+                is NetworkResult.Loading -> emit(emptyList())
             }
         }
     }

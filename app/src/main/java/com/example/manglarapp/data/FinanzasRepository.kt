@@ -103,13 +103,12 @@ class FinanzasRepository {
         )
 
         when (result) {
-            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Success -> emit(result.data)
             is NetworkResult.Error -> {
                 println("Error obteniendo usuarios finanzas: ${result.message}")
-                FlowCollector.emit(usuariosFinanzas.toList())
+                emit(usuariosFinanzas.toList())
             }
-
-            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
+            is NetworkResult.Loading -> emit(emptyList())
         }
     }
 
@@ -123,13 +122,13 @@ class FinanzasRepository {
         )
 
         when (result) {
-            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Success -> emit(result.data)
             is NetworkResult.Error -> {
                 println("Error obteniendo gastos: ${result.message}")
-                FlowCollector.emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
+                 emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
             }
 
-            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
+            is NetworkResult.Loading -> emit(emptyList())
         }
     }
 
@@ -143,13 +142,13 @@ class FinanzasRepository {
         )
 
         when (result) {
-            is NetworkResult.Success -> FlowCollector.emit(result.data)
+            is NetworkResult.Success -> emit(result.data)
             is NetworkResult.Error -> {
                 println("Error obteniendo gastos por mes: ${result.message}")
-                FlowCollector.emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
+                emit(gastos.filter { it.tipo == TipoFinanza.EGRESO }.toList())
             }
 
-            is NetworkResult.Loading -> FlowCollector.emit(emptyList())
+            is NetworkResult.Loading -> emit(emptyList())
         }
     }
 

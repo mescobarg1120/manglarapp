@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.manglarapp.data.UsuariosRepository
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.ui.screens.*
 import com.example.manglarapp.viewmodel.TareasViewModel
@@ -39,11 +40,12 @@ fun AppNavigation(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { usuario ->
-                    usuarioActual = UsuariosViewModel
+                    usuarioActual = usuario
                     navController.navigate(Screen.Tareas.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
-                }
+                },
+                usuariosRepository = UsuariosRepository()
             )
         }
 

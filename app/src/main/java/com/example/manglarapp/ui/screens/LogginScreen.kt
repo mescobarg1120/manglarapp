@@ -21,10 +21,14 @@ import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
 import com.example.manglarapp.utils.CameraHelper
 import kotlinx.coroutines.launch
+import com.example.manglarapp.model.Usuario
+import com.example.manglarapp.data.UsuariosRepository
+import com.example.manglarapp.model.EstadoUsuario
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: (Usuario) -> Unit,
+    usuariosRepository: UsuariosRepository = UsuariosRepository()
 ) {
     val context = LocalContext.current
     var nombre by remember { mutableStateOf("") }
@@ -34,6 +38,7 @@ fun LoginScreen(
     var fotoUri by remember { mutableStateOf<Uri?>(null) }
     var tempFotoUri by remember { mutableStateOf<Uri?>(null) }
     var shouldLaunchCamera by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) } // ← Agregar estado de carga
 
     // ⭐ Para Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
@@ -44,10 +49,20 @@ fun LoginScreen(
     ) { success ->
         if (success && tempFotoUri != null) {
             fotoUri = tempFotoUri
-            onLoginSuccess("Felipe")
+            // ⭐ Crear un usuario temporal para el reconocimiento facial
+            val usuarioReconocido = Usuario(
+                rut = "",
+                nombre = "Felipe",
+                email = "",
+                rol = "U",
+                estado = EstadoUsuario.ACTIVO,
+                password = ""
+            )
+            onLoginSuccess(usuarioReconocido)
         }
         shouldLaunchCamera = false
     }
+
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -206,7 +221,6 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
-                            // ⭐ VALIDACIÓN CON SNACKBAR CORREGIDO
                             scope.launch {
                                 when {
                                     nombre.isEmpty() -> {
@@ -215,34 +229,49 @@ fun LoginScreen(
                                             duration = SnackbarDuration.Short
                                         )
                                     }
+
                                     contrasena.isEmpty() -> {
                                         snackbarHostState.showSnackbar(
                                             message = "Por favor ingresa tu contraseña",
                                             duration = SnackbarDuration.Short
                                         )
                                     }
-                                    contrasena != "12345" -> {
-                                        snackbarHostState.showSnackbar(
-                                            message = "❌ Contraseña incorrecta",
-                                            duration = SnackbarDuration.Long
-                                        )
-                                        contrasena = ""
-                                    }
+
                                     else -> {
-                                        onLoginSuccess(nombre)
+                                        isLoading = true
+                                        // ⭐ LLAMADA A LA API
+                                        val result = usuariosRepository.login(nombre, contrasena)
+                                        isLoading = false
+
+                                        result.onSuccess { usuario ->
+                                            onLoginSuccess(usuario) // ← Pasa el Usuario completo
+                                        }.onFailure { error ->
+                                            snackbarHostState.showSnackbar(
+                                                message = "❌ ${error.message ?: "Error al iniciar sesión"}",
+                                                duration = SnackbarDuration.Long
+                                            )
+                                            contrasena = ""
+                                        }
                                     }
                                 }
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(50.dp),
+                        enabled = !isLoading // ← Deshabilitar mientras carga
                     ) {
-                        Icon(Icons.Default.Login, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("INICIAR SESIÓN")
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(Icons.Default.Login, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("INICIAR SESIÓN")
+                        }
                     }
-
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                     OutlinedButton(
