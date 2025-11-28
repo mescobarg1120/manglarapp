@@ -1,6 +1,7 @@
 package com.example.manglarapp.data
 
 import com.example.manglarapp.model.EstadoUsuario
+import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.model.Usuario
 import com.example.manglarapp.network.NetworkResult
 import com.example.manglarapp.network.RetrofitClient
@@ -31,7 +32,7 @@ class UsuariosRepository {
             rut = "12.633.195-9",
             nombre = "Cristina Gonzalez",
             email = "m.escobar2@duocuc.cl",
-            rol = "Usuario",
+            rol = RolUsuario.ARRENDATARIO,
             estado = EstadoUsuario.ACTIVO,
             password = "123456"
         )

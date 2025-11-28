@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.viewmodel.TareasViewModel
-import com.example.manglarapp.viewmodel.UsuariosViewModel
 import com.example.manglarapp.model.Usuario
+import com.example.manglarapp.model.RolUsuario // ✅ Agregar import
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +35,6 @@ fun TareasScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var showMenuExpanded by remember { mutableStateOf(false) }
 
-    // ⭐ CONTADOR NUCLEAR
     var recompositionTrigger by remember { mutableStateOf(0) }
 
     LaunchedEffect(tareas) {
@@ -66,7 +65,8 @@ fun TareasScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
-                    if (usuarioActual.rol == "ADMIN") {
+                    // ✅ CAMBIO: Comparar con el enum
+                    if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
                         val pendientes = viewModel.obtenerTareasPendientes()
                         if (pendientes.isNotEmpty()) {
                             BadgedBox(
@@ -128,7 +128,8 @@ fun TareasScreen(
             )
         },
         floatingActionButton = {
-            if (usuarioActual.rol == "ADMIN") {
+            // ✅ CAMBIO: Comparar con el enum
+            if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
                 FloatingActionButton(
                     onClick = onNavigateToAgregar,
                     containerColor = MaterialTheme.colorScheme.secondary
@@ -155,7 +156,8 @@ fun TareasScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                if (usuarioActual.rol == "ADMIN") {
+                // ✅ CAMBIO: Comparar con el enum
+                if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
                     IconButton(onClick = { viewModel.toggleModoEdicion() }) {
                         Icon(
                             imageVector = if (modoEdicion) Icons.Default.Check else Icons.Default.Edit,
@@ -165,7 +167,6 @@ fun TareasScreen(
                 }
             }
 
-            // ⭐ LazyColumn sin key
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -174,7 +175,6 @@ fun TareasScreen(
                 items(
                     items = tareas,
                     key = { tarea ->
-                        // ⭐ KEY incluye el trigger para forzar recomposición
                         "${tarea.id}_${tarea.asignaciones.hashCode()}_$recompositionTrigger"
                     }
                 ) { tarea ->
@@ -287,7 +287,6 @@ fun TareaCard(
                 Row {
                     Text("${tarea.puntos} Pts", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.width(8.dp))
-                    // ⭐ Mostrar cuántas quedan disponibles
                     val tareasRestantes = tarea.disponibilidad - tarea.asignaciones.size
                     Text(
                         text = "N° $tareasRestantes",
@@ -344,11 +343,11 @@ fun TareaCard(
                                         onLiberar = { onLiberarTarea(dia) }
                                     )
                                 } else {
-                                    // ⭐ CORRECCIÓN: Contar correctamente las tareas tomadas
                                     val tareasTomadasCount = tarea.asignaciones.size
 
+                                    // ✅ CAMBIO: Comparar con el enum
                                     if (tareasTomadasCount < tarea.disponibilidad &&
-                                        usuarioActual.rol == "ARRENDATARIO") {
+                                        usuarioActual.rol == RolUsuario.ARRENDATARIO) {
                                         FilledTonalButton(
                                             onClick = {
                                                 println("🟢 BOTÓN TOMAR PRESIONADO: ${tarea.id} - $dia (${tareasTomadasCount}/${tarea.disponibilidad})")
@@ -396,7 +395,7 @@ fun TareaAsignacionChip(
 
     when (asignacion.estado) {
         EstadoAsignacion.TOMADA -> {
-            if (asignacion.usuarioId== usuarioActual.rut) {
+            if (asignacion.usuarioId == usuarioActual.rut) {
                 chipColor = MaterialTheme.colorScheme.tertiary
                 chipIcon = Icons.Default.CameraAlt
                 chipTexto = asignacion.usuarioNombre
@@ -412,7 +411,8 @@ fun TareaAsignacionChip(
         }
 
         EstadoAsignacion.PENDIENTE_APROBACION -> {
-            if (usuarioActual.rol == "ADMIN") {
+            // ✅ CAMBIO: Comparar con el enum
+            if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
                 chipColor = Color(0xFFFFA726)
                 chipIcon = Icons.Default.Visibility
                 chipTexto = asignacion.usuarioNombre

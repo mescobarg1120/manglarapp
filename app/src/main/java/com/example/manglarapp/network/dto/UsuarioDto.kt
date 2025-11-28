@@ -1,6 +1,7 @@
 package com.example.manglarapp.network.dto
 
 import com.example.manglarapp.model.EstadoUsuario
+import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.model.Usuario
 
 /**
@@ -35,7 +36,12 @@ fun UsuarioDto.toUsuario(): Usuario {
         rut = rut,
         nombre = nombre,
         email = email,
-        rol = rol,
+        rol = when (rol.uppercase()) {
+            "ADMINISTRADOR" -> RolUsuario.ADMINISTRADOR
+            "ARRENDATARIO" -> RolUsuario.ARRENDATARIO
+            "SUPERVISOR" -> RolUsuario.SUPERVISOR
+            else -> RolUsuario.ARRENDATARIO
+        },
         estado = when (estado.uppercase()) {
             "ACTIVO" -> EstadoUsuario.ACTIVO
             "INACTIVO" -> EstadoUsuario.INACTIVO
@@ -46,14 +52,14 @@ fun UsuarioDto.toUsuario(): Usuario {
     )
 }
 
-fun Usuario.toUsuarioDto(): UsuarioDto {
+fun Usuario.toDto(): UsuarioDto {
     return UsuarioDto(
         rut = rut,
         nombre = nombre,
         email = email,
-        rol = rol,
+        rol = rol.name,
         estado = estado.name,
-        password = null // No enviamos el password en respuestas
+        password = password
     )
 }
 
@@ -62,7 +68,7 @@ fun Usuario.toUsuarioRequest(): UsuarioRequest {
         rut = rut,
         nombre = nombre,
         email = email,
-        rol = rol,
+        rol = rol.name,
         estado = estado.name,
         password = password
     )

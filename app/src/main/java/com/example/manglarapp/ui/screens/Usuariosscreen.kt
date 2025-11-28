@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.manglarapp.model.EstadoUsuario
 import com.example.manglarapp.model.Usuario
+import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.viewmodel.UsuariosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -248,6 +249,59 @@ private fun TablaUsuarios(
     }
 }
 
+
+@Composable
+private fun ChipRol(
+    rol: RolUsuario,
+    modifier: Modifier = Modifier
+) {
+    val (color, texto) = when (rol) {
+        RolUsuario.ADMINISTRADOR -> Color(0xFF1976D2) to "Administrador"
+        RolUsuario.ARRENDATARIO -> Color(0xFF7B1FA2) to "Arrendatario"
+        RolUsuario.SUPERVISOR -> Color(0xFF388E3C) to "Supervisor"
+    }
+
+    Surface(
+        modifier = modifier,
+        color = color,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = texto,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun ChipEstado(
+    estado: EstadoUsuario,
+    modifier: Modifier = Modifier
+) {
+    val (color, texto) = when (estado) {
+        EstadoUsuario.ACTIVO -> Color(0xFF4CAF50) to "Activo"
+        EstadoUsuario.INACTIVO -> Color(0xFF9E9E9E) to "Inactivo"
+        EstadoUsuario.BLOQUEADO -> Color(0xFFE53935) to "Bloqueado"
+    }
+
+    Surface(
+        modifier = modifier,
+        color = color,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = texto,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
 @Composable
 private fun FilaUsuario(
     usuario: Usuario,
@@ -279,9 +333,8 @@ private fun FilaUsuario(
             modifier = Modifier.weight(2.5f)
         )
 
-        Text(
-            text = usuario.rol,
-            style = MaterialTheme.typography.bodyMedium,
+        ChipRol(
+            rol = usuario.rol,
             modifier = Modifier.weight(1.2f)
         )
 
@@ -319,32 +372,6 @@ private fun FilaUsuario(
     }
 }
 
-@Composable
-private fun ChipEstado(
-    estado: EstadoUsuario,
-    modifier: Modifier = Modifier
-) {
-    val (color, texto) = when (estado) {
-        EstadoUsuario.ACTIVO -> Color(0xFF4CAF50) to "activo"
-        EstadoUsuario.INACTIVO -> Color(0xFF9E9E9E) to "inactivo"
-        EstadoUsuario.BLOQUEADO -> Color(0xFFE53935) to "bloqueado"
-    }
-
-    Surface(
-        modifier = modifier,
-        color = color,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Text(
-            text = texto,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogoUsuario(
@@ -358,12 +385,15 @@ private fun DialogoUsuario(
     var rut by remember { mutableStateOf(usuario?.rut ?: "") }
     var nombre by remember { mutableStateOf(usuario?.nombre ?: "") }
     var email by remember { mutableStateOf(usuario?.email ?: "") }
-    var rol by remember { mutableStateOf(usuario?.rol ?: "Usuario") }
+    // ✅ CAMBIO: Usar RolUsuario en lugar de String
+    var rol by remember { mutableStateOf(usuario?.rol ?: RolUsuario.ARRENDATARIO) }
     var password by remember { mutableStateOf("") }
     var mostrarPassword by remember { mutableStateOf(false) }
 
     var expandedRol by remember { mutableStateOf(false) }
-    val roles = listOf("Administrador", "Usuario", "Supervisor")
+
+    // ✅ CAMBIO: Lista de enums en lugar de Strings
+    val roles = listOf(RolUsuario.ADMINISTRADOR, RolUsuario.ARRENDATARIO, RolUsuario.SUPERVISOR)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -405,7 +435,12 @@ private fun DialogoUsuario(
                     onExpandedChange = { expandedRol = !expandedRol }
                 ) {
                     OutlinedTextField(
-                        value = rol,
+                        // ✅ CAMBIO: Mapear el enum a texto legible
+                        value = when (rol) {
+                            RolUsuario.ADMINISTRADOR -> "Administrador"
+                            RolUsuario.ARRENDATARIO -> "Arrendatario"
+                            RolUsuario.SUPERVISOR -> "Supervisor"
+                        },
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Rol") },
@@ -423,9 +458,17 @@ private fun DialogoUsuario(
                     ) {
                         roles.forEach { rolOpcion ->
                             DropdownMenuItem(
-                                text = { Text(rolOpcion) },
+                                text = {
+                                    Text(
+                                        when (rolOpcion) {
+                                            RolUsuario.ADMINISTRADOR -> "Administrador"
+                                            RolUsuario.ARRENDATARIO -> "Arrendatario"
+                                            RolUsuario.SUPERVISOR -> "Supervisor"
+                                        }
+                                    )
+                                },
                                 onClick = {
-                                    rol = rolOpcion
+                                    rol = rolOpcion // ✅ Guardar el enum
                                     expandedRol = false
                                 }
                             )
@@ -472,9 +515,9 @@ private fun DialogoUsuario(
                         rut = rut,
                         nombre = nombre,
                         email = email,
-                        rol = rol,
+                        rol = rol, // ✅ Ahora es RolUsuario.ADMINISTRADOR, etc.
                         estado = usuario?.estado ?: EstadoUsuario.ACTIVO,
-                        password = if (esEdicion) usuario?.password ?: "" else password
+                        password = password
                     )
                     onConfirm(nuevoUsuario)
                 },

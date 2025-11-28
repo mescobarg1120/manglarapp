@@ -7,7 +7,7 @@ data class Usuario(
     val rut: String = "",
     val nombre: String = "",
     val email: String = "",
-    val rol: String = "",
+    val rol: RolUsuario  = RolUsuario.ADMINISTRADOR,
     val estado: EstadoUsuario = EstadoUsuario.ACTIVO,
     val password: String = "" // En producción, esto debe estar encriptado
 )
@@ -19,6 +19,15 @@ enum class EstadoUsuario {
     ACTIVO,
     INACTIVO,
     BLOQUEADO
+}
+
+enum class RolUsuario {
+
+    ADMINISTRADOR,
+
+    ARRENDATARIO,
+
+    SUPERVISOR
 }
 
 /**

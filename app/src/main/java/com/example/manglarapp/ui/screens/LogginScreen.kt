@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import com.example.manglarapp.model.Usuario
 import com.example.manglarapp.data.UsuariosRepository
 import com.example.manglarapp.model.EstadoUsuario
+import com.example.manglarapp.model.RolUsuario
 
 @Composable
 fun LoginScreen(
@@ -54,7 +55,7 @@ fun LoginScreen(
                 rut = "",
                 nombre = "Felipe",
                 email = "",
-                rol = "U",
+                rol = RolUsuario.ARRENDATARIO,
                 estado = EstadoUsuario.ACTIVO,
                 password = ""
             )
