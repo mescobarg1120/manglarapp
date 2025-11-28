@@ -1,65 +1,34 @@
 package com.example.manglarapp.network.api
 
-import com.example.manglarapp.network.dto.*
-import retrofit2.Response
+import com.example.manglarapp.network.dto.UsuarioDto
 import retrofit2.http.*
 
-/**
- * Servicio API para operaciones de Usuarios
- */
 interface UsuariosApiService {
 
-    /**
-     * Obtiene todos los usuarios
-     */
     @GET("usuarios")
-    suspend fun obtenerUsuarios(): Response<List<UsuarioDto>>
+    suspend fun obtenerUsuarios(): List<UsuarioDto>
 
-    /**
-     * Obtiene un usuario por RUT
-     */
     @GET("usuarios/{rut}")
-    suspend fun obtenerUsuarioPorRut(@Path("rut") rut: String): Response<UsuarioDto>
+    suspend fun obtenerUsuarioPorRut(@Path("rut") rut: String): UsuarioDto
 
-    /**
-     * Crea un nuevo usuario
-     */
     @POST("usuarios")
-    suspend fun crearUsuario(@Body request: UsuarioRequest): Response<UsuarioDto>
+    suspend fun crearUsuario(@Body usuario: UsuarioDto): UsuarioDto
 
-    /**
-     * Actualiza un usuario existente
-     */
     @PUT("usuarios/{rut}")
     suspend fun actualizarUsuario(
         @Path("rut") rut: String,
-        @Body request: UsuarioRequest
-    ): Response<UsuarioDto>
+        @Body usuario: UsuarioDto
+    ): UsuarioDto
 
-    /**
-     * Elimina un usuario
-     */
     @DELETE("usuarios/{rut}")
-    suspend fun eliminarUsuario(@Path("rut") rut: String): Response<Unit>
+    suspend fun eliminarUsuario(@Path("rut") rut: String)
 
-    /**
-     * Busca usuarios por query
-     */
     @GET("usuarios/buscar")
-    suspend fun buscarUsuarios(@Query("q") query: String): Response<List<UsuarioDto>>
+    suspend fun buscarUsuarios(@Query("query") query: String): List<UsuarioDto>
 
-    /**
-     * Login de usuario
-     */
-    @POST("usuarios/login")
-    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
-
-    /**
-     * Cambia el estado de un usuario
-     */
     @PATCH("usuarios/{rut}/estado")
     suspend fun cambiarEstadoUsuario(
         @Path("rut") rut: String,
         @Query("estado") estado: String
-    ): Response<UsuarioDto>
+    ): UsuarioDto
 }
