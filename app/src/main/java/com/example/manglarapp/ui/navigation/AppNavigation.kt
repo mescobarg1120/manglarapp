@@ -8,8 +8,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.manglarapp.data.AuthRepository
 import com.example.manglarapp.data.UsuariosRepository
 import com.example.manglarapp.domain.model.*
+import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.ui.screens.*
 import com.example.manglarapp.viewmodel.TareasViewModel
 import com.example.manglarapp.model.Usuario
@@ -45,7 +47,7 @@ fun AppNavigation(
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                usuariosRepository = UsuariosRepository()
+                authRepository = AuthRepository()
             )
         }
 
@@ -54,6 +56,7 @@ fun AppNavigation(
                 TareasScreen(
                     viewModel = tareasViewModel,
                     usuarioActual = usuario,
+                    navController = navController,
                     onNavigateToAgregar = { /* TODO */ },
                     onConfirmarTarea = { tareaId, dia ->
                         val tarea = tareasViewModel.tareas.value.find { it.id == tareaId }
@@ -114,15 +117,31 @@ fun AppNavigation(
             )
         }
         composable("usuarios") {
-            UsuariosScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            usuarioActual?.let { usuario ->
+                if (usuario.rol == RolUsuario.ADMINISTRADOR) {
+                    UsuariosScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        navController = navController,  // ✅ Pasar navController
+                        usuarioActual = usuario          // ✅ Pasar usuario
+                    )
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Screen.Tareas.route) {
+                            popUpTo(Screen.Tareas.route) { inclusive = true }
+                        }
+                    }
+                }
+            }
         }
 
         composable("finanzas") {
-            FinanzasScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            usuarioActual?.let { usuario ->
+                FinanzasScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    navController = navController,  // ✅ Pasar navController
+                    usuarioActual = usuario          // ✅ Pasar usuario
+                )
+            }
         }
     }
 }

@@ -1,10 +1,13 @@
 package com.example.manglarapp.ui.screens
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney  // ✅ Para Finanzas
+import androidx.compose.material.icons.filled.People       // ✅ Para Usuarios
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,7 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.example.manglarapp.domain.model.*
 import com.example.manglarapp.viewmodel.TareasViewModel
 import com.example.manglarapp.model.Usuario
-import com.example.manglarapp.model.RolUsuario // ✅ Agregar import
+import com.example.manglarapp.model.RolUsuario
+import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +30,8 @@ fun TareasScreen(
     onNavigateToAgregar: () -> Unit,
     onConfirmarTarea: (String, DiaSemana) -> Unit,
     onRevisarTarea: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    navController: NavHostController? = null
 ) {
     val tareas by viewModel.tareas.collectAsState()
     val modoEdicion by viewModel.modoEdicion.collectAsState()
@@ -80,7 +85,45 @@ fun TareasScreen(
                             }
                         }
                     }
+                    // ✅ NAVEGACIÓN: Finanzas
+                    IconButton(onClick = {
+                        println("🔵 CLICK EN FINANZAS")
+                        navController?.navigate("finanzas")
+                    }) {
+                        Icon(
+                            Icons.Default.AttachMoney,
+                            contentDescription = "Finanzas"
+                        )
+                    }
 
+                    // ✅ NAVEGACIÓN: Usuarios (SOLO ADMINISTRADOR)
+                    if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
+                        println("🔵 CLICK EN USUARIOS")
+                        IconButton(onClick = {
+                            navController?.navigate("usuarios")
+                        }) {
+                            Icon(
+                                Icons.Default.People,
+                                contentDescription = "Usuarios"
+                            )
+                        }
+                    }
+
+                    // Notificaciones de tareas pendientes (solo admin)
+                    if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
+                        val pendientes = viewModel.obtenerTareasPendientes()
+                        if (pendientes.isNotEmpty()) {
+                            BadgedBox(
+                                badge = {
+                                    Badge { Text("${pendientes.size}") }
+                                }
+                            ) {
+                                IconButton(onClick = onRevisarTarea) {
+                                    Icon(Icons.Default.Notifications, "Pendientes")
+                                }
+                            }
+                        }
+                    }
                     Box {
                         IconButton(onClick = { showMenuExpanded = true }) {
                             Icon(Icons.Default.MoreVert, "Menú")
@@ -97,6 +140,7 @@ fun TareasScreen(
                                 },
                                 onClick = {
                                     showMenuExpanded = false
+                                    // TODO: navegar a perfil
                                 }
                             )
 
@@ -107,6 +151,7 @@ fun TareasScreen(
                                 },
                                 onClick = {
                                     showMenuExpanded = false
+                                    // TODO: navegar a configuración
                                 }
                             )
 
@@ -128,7 +173,6 @@ fun TareasScreen(
             )
         },
         floatingActionButton = {
-            // ✅ CAMBIO: Comparar con el enum
             if (usuarioActual.rol == RolUsuario.ADMINISTRADOR) {
                 FloatingActionButton(
                     onClick = onNavigateToAgregar,

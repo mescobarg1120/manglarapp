@@ -231,23 +231,5 @@ class UsuariosRepository {
         }
     }
 
-    /**
-     * Login de usuario en el backend
-     */
-    suspend fun login(email: String, password: String): Result<Usuario> {
-        return try {
-            val result = safeApiCall(
-                apiCall = { apiService.login(LoginRequest(email, password)) },
-                transform = { it.usuario.toUsuario() }
-            )
 
-            when (result) {
-                is NetworkResult.Success -> Result.success(result.data)
-                is NetworkResult.Error -> Result.failure(kotlin.Exception(result.message))
-                is NetworkResult.Loading -> Result.failure(kotlin.Exception("Operación en progreso"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

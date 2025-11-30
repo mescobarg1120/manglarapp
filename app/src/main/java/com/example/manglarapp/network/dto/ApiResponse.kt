@@ -13,12 +13,4 @@ data class ApiResponse<T>(
 /**
  * Respuesta para login
  */
-data class LoginRequest(
-    val email: String,
-    val password: String
-)
 
-data class LoginResponse(
-    val usuario: UsuarioDto,
-    val token: String? = null
-)

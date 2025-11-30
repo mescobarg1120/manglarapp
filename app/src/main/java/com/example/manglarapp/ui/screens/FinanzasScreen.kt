@@ -16,9 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.manglarapp.model.Finanza
 import com.example.manglarapp.model.TipoFinanza
 import com.example.manglarapp.model.UsuarioFinanza
+import com.example.manglarapp.model.Usuario
+import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.viewmodel.FinanzasViewModel
 import java.text.NumberFormat
 import java.util.*
@@ -27,7 +30,9 @@ import java.util.*
 @Composable
 fun FinanzasScreen(
     viewModel: FinanzasViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    navController: NavHostController? = null,
+    usuarioActual: Usuario? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -46,16 +51,38 @@ fun FinanzasScreen(
                         Text("Finanzas hogar")
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF2F6F6C),
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                ),
+                actions = {
+                    // ✅ NAVEGACIÓN: Tareas
+                    IconButton(onClick = {
+                        navController?.navigate("tareas")
+                    }) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Tareas")
+                    }
+
+                    // ✅ NAVEGACIÓN: Finanzas (destacado porque estás aquí)
+                    IconButton(onClick = { /* Ya estás aquí */ }) {
+                        Icon(
+                            Icons.Default.AttachMoney,
+                            contentDescription = "Finanzas",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+
+                    // ✅ NAVEGACIÓN: Usuarios (SOLO ADMINISTRADOR)
+                    if (usuarioActual?.rol == RolUsuario.ADMINISTRADOR) {
+                        IconButton(onClick = {
+                            navController?.navigate("usuarios")
+                        }) {
+                            Icon(Icons.Default.People, contentDescription = "Usuarios")
+                        }
+                    }
+                }
             )
         }
     ) { paddingValues ->

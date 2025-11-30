@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.manglarapp.model.EstadoUsuario
 import com.example.manglarapp.model.Usuario
 import com.example.manglarapp.model.RolUsuario
@@ -26,24 +27,46 @@ import com.example.manglarapp.viewmodel.UsuariosViewModel
 @Composable
 fun UsuariosScreen(
     viewModel: UsuariosViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    navController: NavHostController? = null,
+    usuarioActual: Usuario? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Usuarios") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
-                    }
-                },
+                title = { Text("Gestión de Usuarios") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF2F6F6C),
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                ),
+                actions = {
+                    // ✅ NAVEGACIÓN: Tareas
+                    IconButton(onClick = {
+                        navController?.navigate("tareas")
+                    }) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Tareas")
+                    }
+
+                    // ✅ NAVEGACIÓN: Finanzas
+                    IconButton(onClick = {
+                        navController?.navigate("finanzas")
+                    }) {
+                        Icon(Icons.Default.AttachMoney, contentDescription = "Finanzas")
+                    }
+
+                    // ✅ NAVEGACIÓN: Usuarios (destacado porque estás aquí)
+                    IconButton(onClick = { /* Ya estás aquí */ }) {
+                        Icon(
+                            Icons.Default.People,
+                            contentDescription = "Usuarios",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -385,14 +408,12 @@ private fun DialogoUsuario(
     var rut by remember { mutableStateOf(usuario?.rut ?: "") }
     var nombre by remember { mutableStateOf(usuario?.nombre ?: "") }
     var email by remember { mutableStateOf(usuario?.email ?: "") }
-    // ✅ CAMBIO: Usar RolUsuario en lugar de String
     var rol by remember { mutableStateOf(usuario?.rol ?: RolUsuario.ARRENDATARIO) }
     var password by remember { mutableStateOf("") }
     var mostrarPassword by remember { mutableStateOf(false) }
 
     var expandedRol by remember { mutableStateOf(false) }
 
-    // ✅ CAMBIO: Lista de enums en lugar de Strings
     val roles = listOf(RolUsuario.ADMINISTRADOR, RolUsuario.ARRENDATARIO, RolUsuario.SUPERVISOR)
 
     AlertDialog(
@@ -435,7 +456,6 @@ private fun DialogoUsuario(
                     onExpandedChange = { expandedRol = !expandedRol }
                 ) {
                     OutlinedTextField(
-                        // ✅ CAMBIO: Mapear el enum a texto legible
                         value = when (rol) {
                             RolUsuario.ADMINISTRADOR -> "Administrador"
                             RolUsuario.ARRENDATARIO -> "Arrendatario"
@@ -468,7 +488,7 @@ private fun DialogoUsuario(
                                     )
                                 },
                                 onClick = {
-                                    rol = rolOpcion // ✅ Guardar el enum
+                                    rol = rolOpcion
                                     expandedRol = false
                                 }
                             )
@@ -515,7 +535,7 @@ private fun DialogoUsuario(
                         rut = rut,
                         nombre = nombre,
                         email = email,
-                        rol = rol, // ✅ Ahora es RolUsuario.ADMINISTRADOR, etc.
+                        rol = rol,
                         estado = usuario?.estado ?: EstadoUsuario.ACTIVO,
                         password = password
                     )

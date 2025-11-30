@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
+import com.example.manglarapp.data.AuthRepository
 import com.example.manglarapp.utils.CameraHelper
 import kotlinx.coroutines.launch
 import com.example.manglarapp.model.Usuario
@@ -29,7 +30,7 @@ import com.example.manglarapp.model.RolUsuario
 @Composable
 fun LoginScreen(
     onLoginSuccess: (Usuario) -> Unit,
-    usuariosRepository: UsuariosRepository = UsuariosRepository()
+    authRepository: AuthRepository = AuthRepository()
 ) {
     val context = LocalContext.current
     var nombre by remember { mutableStateOf("") }
@@ -241,7 +242,7 @@ fun LoginScreen(
                                     else -> {
                                         isLoading = true
                                         // ⭐ LLAMADA A LA API
-                                        val result = usuariosRepository.login(nombre, contrasena)
+                                        val result = authRepository.login(nombre, contrasena)
                                         isLoading = false
 
                                         result.onSuccess { usuario ->

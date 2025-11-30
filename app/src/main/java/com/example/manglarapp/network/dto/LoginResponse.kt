@@ -5,12 +5,13 @@ import com.example.manglarapp.model.RolUsuario
 import com.example.manglarapp.model.Usuario
 
 data class LoginResponse(
+    val token: String,
     val rut: String,
     val nombre: String,
     val email: String,
     val rol: String,
     val estado: String
-) {
+)
     // ✅ Función de extensión para convertir LoginResponse a Usuario
     fun LoginResponse.toUsuario(): Usuario {
         return Usuario(
@@ -32,4 +33,3 @@ data class LoginResponse(
             password = "" // No se devuelve el password desde el login
         )
     }
-}
